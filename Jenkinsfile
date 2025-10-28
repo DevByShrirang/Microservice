@@ -3,29 +3,17 @@ pipeline {
 
   environment {
     DOCKERHUB_USER = 'shrirang451'
-    SERVICE_NAME   = 'adservice'    // 👈 change per branch
+    SERVICE_NAME   = 'adservice'   // 👈 change this per branch
     CHART_PATH     = 'microservice-chart'
-    GIT_BRANCH     = 'adservice'
+    GIT_BRANCH     = 'adservice'   // current branch name
   }
 
   stages {
     stage('Checkout Code') {
       steps {
         script {
-          echo "📥 Checking out ${GIT_BRANCH} branch"
+          echo "📥 Checking out branch ${GIT_BRANCH}"
           checkout scm
-        }
-      }
-    }
-
-    stage('Fetch Helm Chart from Main Branch') {
-      steps {
-        script {
-          echo "📦 Fetching ${CHART_PATH} from main branch"
-          sh """
-            git fetch origin main
-            git checkout origin/main -- ${CHART_PATH}
-          """
         }
       }
     }
@@ -49,8 +37,8 @@ pipeline {
         script {
           echo "📝 Updating image tag in ${CHART_PATH}/${SERVICE_NAME}-values.yaml"
           sh """
-            sed -i 's|repository:.*|repository: "${DOCKERHUB_USER}/${SERVICE_NAME}"|' ${CHART_PATH}/${SERVICE_NAME}-values.yaml
             sed -i 's|tag:.*|tag: "${BUILD_NUMBER}"|' ${CHART_PATH}/${SERVICE_NAME}-values.yaml
+            sed -i 's|repository:.*|repository: "${DOCKERHUB_USER}/${SERVICE_NAME}"|' ${CHART_PATH}/${SERVICE_NAME}-values.yaml
           """
         }
       }
@@ -59,7 +47,7 @@ pipeline {
     stage('Commit & Push Changes') {
       steps {
         script {
-          echo "📤 Committing Helm value changes to ${GIT_BRANCH} branch"
+          echo "📤 Committing Helm value changes to same repo"
           withCredentials([usernamePassword(credentialsId: 'githubtoken', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
             sh """
               git config user.name "Jenkins CI"
