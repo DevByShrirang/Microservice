@@ -3,24 +3,24 @@ pipeline {
 
   environment {
     DOCKERHUB_USER = 'shrirang451'
-    SERVICE_NAME   = 'adservice'    // 👈 change this per branch
-    CHART_PATH     = 'Microservice/microservice-chart'  // helm folder at repo root
-    GIT_BRANCH     = 'adservice'    // current branch name (auto per multibranch)
+    SERVICE_NAME   = 'adservice'            // 👈 change per branch/service
+    CHART_PATH     = 'microservice-chart'   // ✅ corrected path
+    GIT_BRANCH     = 'adservice'            // or use env.BRANCH_NAME in multibranch
   }
 
-  
   stages {
 
-    stage('Checkout Codee') {
+    stage('Checkout Code') {
       steps {
         script {
           echo "📥 Checking out source code for branch: ${GIT_BRANCH}"
           checkout scm
+          sh 'echo "✅ Current workspace:" && pwd && ls -R | grep adservice-values.yaml || true'
         }
       }
     }
 
-    stage('Build & Push Docker Images') {
+    stage('Build & Push Docker Image') {
       steps {
         script {
           echo "🚀 Building and pushing Docker image for ${SERVICE_NAME}"
@@ -36,24 +36,27 @@ pipeline {
       }
     }
 
-    stage('Update Helm Chart for GitOpss') {
+    stage('Update Helm Chart for GitOps') {
       steps {
         script {
           echo "📝 Updating image details in Helm chart for ${SERVICE_NAME}"
-          
-          // Verify if values file exists before editing
+
+          // ✅ Check if values file exists
           sh """
             if [ ! -f ${CHART_PATH}/${SERVICE_NAME}-values.yaml ]; then
               echo "❌ ERROR: ${CHART_PATH}/${SERVICE_NAME}-values.yaml not found!"
+              echo "Current directory: $(pwd)"
+              echo "Available files:"
+              ls -R | grep values.yaml || true
               exit 1
             fi
           """
 
-          // Update image repository and tag
+          // ✅ Update repository and tag in the values.yaml
           sh """
-            sed -i 's|repository:.*|repository: "${DOCKERHUB_USER}/${SERVICE_NAME}"|' ${CHART_PATH}/${SERVICE_NAME}-values.yaml
-            sed -i 's|tag:.*|tag: "${BUILD_NUMBER}"|' ${CHART_PATH}/${SERVICE_NAME}-values.yaml
-            echo "✅ Updated image tag and repository for ${SERVICE_NAME}"
+            sed -i 's|repository:.*|repository: ${DOCKERHUB_USER}/${SERVICE_NAME}|' ${CHART_PATH}/${SERVICE_NAME}-values.yaml
+            sed -i 's|tag:.*|tag: ${BUILD_NUMBER}|' ${CHART_PATH}/${SERVICE_NAME}-values.yaml
+            echo "✅ Updated Helm chart for ${SERVICE_NAME}"
           """
         }
       }
@@ -78,7 +81,6 @@ pipeline {
         }
       }
     }
-
   }
 
   post {
