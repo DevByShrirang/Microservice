@@ -4,7 +4,7 @@ pipeline {
   environment {
     DOCKERHUB_USER = 'shrirang451'
     SERVICE_NAME   = 'adservice'    // 👈 change this per branch
-    CHART_PATH     = 'microservice-chart'  // helm folder at repo root
+    CHART_PATH     = 'Microservice/microservice-chart/adservice-values.yaml'  // helm folder at repo root
     GIT_BRANCH     = 'adservice'    // current branch name (auto per multibranch)
   }
 
