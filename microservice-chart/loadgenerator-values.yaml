@@ -1,0 +1,21 @@
+name: loadgenerator
+image:
+  repository: shrirang451/loadgenerator
+  tag: latest
+containerName: main
+containerPort: 8080  # not exposed by a Service; kept as placeholder for probes if ever needed
+podAnnotations:
+  sidecar.istio.io/rewriteAppHTTPProbers: "true"
+env:
+  - name: FRONTEND_ADDR
+    value: "frontend:80"
+  - name: USERS
+    value: "10"
+resources:
+  requests:
+    cpu: 300m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+services: []  # no Service for loadgenerator (matches your YAML)
