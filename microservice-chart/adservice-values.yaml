@@ -1,7 +1,7 @@
 name: adservice
 image:
   repository: shrirang451/adservice
-  tag: latest
+  tag: 23
 containerPort: 9555
 env:
   - name: PORT
