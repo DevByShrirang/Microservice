@@ -3,19 +3,20 @@ pipeline {
 
   environment {
     DOCKERHUB_USER = 'shrirang451'
-    SERVICE_NAME   = 'adservice'            // 👈 change per microservice branch
-    CHART_PATH     = 'microservice-chart'   // ✅ corrected repo path
-    GIT_BRANCH     = 'adservice'            // or use env.BRANCH_NAME for multibranch
+    SERVICE_NAME   = 'adservice'
+    CHART_PATH     = 'microservice-chart'
+    GIT_BRANCH     = 'adservice'         // current feature branch
+    MAIN_BRANCH    = 'main'              // branch where Helm chart exists
   }
 
   stages {
 
-    stage('Checkout Code') {
+    stage('Checkout Source') {
       steps {
         script {
           echo "📥 Checking out source code for branch: ${GIT_BRANCH}"
           checkout scm
-          sh 'echo "✅ Current workspace: $(pwd)" && ls -R | grep values.yaml || true'
+          sh 'echo "✅ Current workspace: $(pwd)" && ls -R | grep Dockerfile || true'
         }
       }
     }
@@ -26,9 +27,7 @@ pipeline {
           echo "🚀 Building and pushing Docker image for ${SERVICE_NAME}"
           withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
             sh """
-              echo "🔨 Building Docker image..."
               docker build -t ${DOCKERHUB_USER}/${SERVICE_NAME}:${BUILD_NUMBER} .
-              echo "📦 Pushing image to DockerHub..."
               docker push ${DOCKERHUB_USER}/${SERVICE_NAME}:${BUILD_NUMBER}
             """
           }
@@ -36,46 +35,57 @@ pipeline {
       }
     }
 
-    stage('Update Helm Chart for GitOps') {
+    stage('Update Helm Chart on Main Branch') {
       steps {
         script {
-          echo "📝 Updating image details in Helm chart for ${SERVICE_NAME}"
+          echo "📝 Switching to main branch to update Helm chart..."
 
-          // ✅ Check if Helm values file exists
+          // ✅ Fetch and checkout main branch separately
           sh """
-            if [ ! -f \${CHART_PATH}/\${SERVICE_NAME}-values.yaml ]; then
-              echo "❌ ERROR: \${CHART_PATH}/\${SERVICE_NAME}-values.yaml not found!"
-              echo "Current directory: \$(pwd)"
-              echo "Files found:"
-              ls -R | grep values.yaml || true
+            git fetch origin ${MAIN_BRANCH}
+            git checkout ${MAIN_BRANCH}
+          """
+
+          // ✅ Validate that file exists on main
+          sh """
+            if [ ! -f ${CHART_PATH}/${SERVICE_NAME}-values.yaml ]; then
+              echo "❌ ERROR: ${CHART_PATH}/${SERVICE_NAME}-values.yaml not found on main branch!"
               exit 1
             fi
           """
 
-          // ✅ Update image repository & tag in Helm chart
+          // ✅ Update image details in Helm values file
           sh """
-            echo "🧩 Updating Helm values for \${SERVICE_NAME}"
-            sed -i 's|repository:.*|repository: ${DOCKERHUB_USER}/${SERVICE_NAME}|' \${CHART_PATH}/\${SERVICE_NAME}-values.yaml
-            sed -i 's|tag:.*|tag: ${BUILD_NUMBER}|' \${CHART_PATH}/\${SERVICE_NAME}-values.yaml
-            echo "✅ Updated Helm chart for \${SERVICE_NAME}"
+            sed -i 's|repository:.*|repository: ${DOCKERHUB_USER}/${SERVICE_NAME}|' ${CHART_PATH}/${SERVICE_NAME}-values.yaml
+            sed -i 's|tag:.*|tag: ${BUILD_NUMBER}|' ${CHART_PATH}/${SERVICE_NAME}-values.yaml
+            echo "✅ Updated Helm chart for ${SERVICE_NAME}"
+          """
+
+          // ✅ Commit and push changes to main
+          withCredentials([usernamePassword(credentialsId: 'githubtoken', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+            sh """
+              git config user.name "Jenkins CI"
+              git config user.email "jenkins@example.com"
+              git add ${CHART_PATH}/${SERVICE_NAME}-values.yaml
+              git commit -m "🤖 Update ${SERVICE_NAME} image tag to ${BUILD_NUMBER}" || echo "No changes to commit"
+              echo "📤 Pushing Helm changes to main branch..."
+              git push https://${GIT_USER}:${GIT_PASS}@github.com/DevByShrirang/Microservice.git HEAD:${MAIN_BRANCH}
+            """
+          }
+
+          // ✅ Switch back to service branch
+          sh """
+            git checkout ${GIT_BRANCH}
           """
         }
       }
     }
+  }
 
-    stage('Commit & Push Helm Changes') {
-      steps {
-        script {
-          echo "📤 Committing Helm values update for ${SERVICE_NAME}"
-          withCredentials([usernamePassword(credentialsId: 'githubtoken', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-            sh """
-              git config --global user.name "Jenkins CI"
-              git config --global user.email "jenkins@example.com"
-
-              git add \${CHART_PATH}/\${SERVICE_NAME}-values.yaml
-              git commit -m "🤖 Update \${SERVICE_NAME} image tag to ${BUILD_NUMBER}" || echo "No changes to commit"
-
-              echo "🔁 Pushing changes to branch: ${GIT_BRANCH}"
-              git push https://\${GIT_USER}:\${GIT_PASS}@github.com/DevByShrirang/Microservice.git HEAD:${GIT_BRANCH}
-            """
-          }
+  post {
+    always {
+      echo "🧹 Cleaning up local Docker images..."
+      sh "docker image prune -f || true"
+    }
+  }
+}
