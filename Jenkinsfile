@@ -20,7 +20,7 @@ pipeline {
       }
     }
 
-    stage('Build & Push Docker Image') {
+    stage('Build & Push Docker Images') {
       steps {
         script {
           echo "🚀 Building and pushing Docker image for ${SERVICE_NAME}"
