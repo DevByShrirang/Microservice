@@ -11,7 +11,7 @@ pipeline {
   
   stages {
 
-    stage('Checkout Code') {
+    stage('Checkout Codee') {
       steps {
         script {
           echo "📥 Checking out source code for branch: ${GIT_BRANCH}"
