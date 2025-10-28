@@ -1,6 +1,6 @@
 name: emailservice
 image:
-  repository: adijaiswal/emailservice
+  repository: shrirang451/emailservice
   tag: latest
 containerPort: 8080
 

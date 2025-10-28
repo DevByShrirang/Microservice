@@ -1,6 +1,6 @@
 name: recommendationservice
 image:
-  repository: adijaiswal/recommendationservice
+  repository: shrirang451/recommendationservice
   tag: latest
 containerPort: 8080
 env:

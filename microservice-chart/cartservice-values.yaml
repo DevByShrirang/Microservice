@@ -1,6 +1,6 @@
 name: cartservice
 image:
-  repository: adijaiswal/cartservice
+  repository: shrirang451/cartservice
   tag: latest
 containerPort: 7070
 env:

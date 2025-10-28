@@ -1,6 +1,6 @@
 name: paymentservice
 image:
-  repository: adijaiswal/paymentservice
+  repository: shrirang451/paymentservice
   tag: latest
 containerPort: 50051
 env:

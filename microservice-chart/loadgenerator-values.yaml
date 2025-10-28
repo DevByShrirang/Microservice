@@ -1,6 +1,6 @@
 name: loadgenerator
 image:
-  repository: adijaiswal/loadgenerator
+  repository: shrirang451/loadgenerator
   tag: latest
 containerName: main
 containerPort: 8080  # not exposed by a Service; kept as placeholder for probes if ever needed

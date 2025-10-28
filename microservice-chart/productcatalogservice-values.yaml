@@ -1,6 +1,6 @@
 name: productcatalogservice
 image:
-  repository: adijaiswal/productcatalogservice
+  repository: shrirang451/productcatalogservice
   tag: latest
 containerPort: 3550
 env:

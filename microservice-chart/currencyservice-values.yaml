@@ -1,6 +1,6 @@
 name: currencyservice
 image:
-  repository: adijaiswal/currencyservice
+  repository: shrirang451/currencyservice
   tag: latest
 containerPort: 7000
 env:

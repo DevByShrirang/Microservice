@@ -1,6 +1,6 @@
 name: frontend
 image:
-  repository: adijaiswal/frontend
+  repository: shrirang451/frontend
   tag: latest
 containerPort: 8080
 

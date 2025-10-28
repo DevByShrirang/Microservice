@@ -1,6 +1,6 @@
 name: checkoutservice
 image:
-  repository: adijaiswal/checkoutservice
+  repository: shrirang451/checkoutservice
   tag: latest
 containerPort: 5050
 env:

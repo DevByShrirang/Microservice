@@ -1,6 +1,6 @@
 name: shippingservice
 image:
-  repository: adijaiswal/shippingservice
+  repository: shrirang451/shippingservice
   tag: latest
 containerPort: 50051
 env:
