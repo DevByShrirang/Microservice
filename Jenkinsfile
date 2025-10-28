@@ -36,7 +36,7 @@ pipeline {
       }
     }
 
-    stage('Update Helm Chart for GitOps') {
+    stage('Update Helm Chart for GitOpss') {
       steps {
         script {
           echo "📝 Updating image details in Helm chart for ${SERVICE_NAME}"
