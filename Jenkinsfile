@@ -3,18 +3,26 @@ pipeline {
 
   environment {
     DOCKERHUB_USER = 'shrirang451'
-    SERVICE_NAME   = 'adservice'           // 👈 change per branch
-    CHART_PATH     = './microservice-chart'
-    GIT_CREDENTIAL = 'githubtoken'         // 👈 Jenkins GitHub credentials ID
-    GIT_BRANCH     = 'main'                // 👈 where your Helm chart lives
+    SERVICE_NAME   = 'adservice'   // 👈 change this per branch
+    CHART_PATH     = 'microservice-chart'
+    GIT_BRANCH     = 'adservice'   // current branch name
   }
 
   stages {
+    stage('Checkout Code') {
+      steps {
+        script {
+          echo "📥 Checking out branch ${GIT_BRANCH}"
+          checkout scm
+        }
+      }
+    }
+
     stage('Build & Push Docker Image') {
       steps {
         script {
           withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
-            echo "🚀 Building and pushing image for ${SERVICE_NAME}"
+            echo "🚀 Building and pushing Docker image for ${SERVICE_NAME}"
             sh """
               docker build -t ${DOCKERHUB_USER}/${SERVICE_NAME}:${BUILD_NUMBER} .
               docker push ${DOCKERHUB_USER}/${SERVICE_NAME}:${BUILD_NUMBER}
@@ -27,18 +35,20 @@ pipeline {
     stage('Update Helm Values for GitOps') {
       steps {
         script {
-          echo "📝 Updating image tag in ${SERVICE_NAME}-values.yaml"
+          echo "📝 Updating image tag in ${CHART_PATH}/${SERVICE_NAME}-values.yaml"
           sh """
             sed -i 's|tag:.*|tag: "${BUILD_NUMBER}"|' ${CHART_PATH}/${SERVICE_NAME}-values.yaml
+            sed -i 's|repository:.*|repository: "${DOCKERHUB_USER}/${SERVICE_NAME}"|' ${CHART_PATH}/${SERVICE_NAME}-values.yaml
           """
         }
       }
     }
 
-    stage('Commit & Push Updated Helm Chart') {
+    stage('Commit & Push Changes') {
       steps {
         script {
-          withCredentials([usernamePassword(credentialsId: "${GIT_CREDENTIAL}", usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+          echo "📤 Committing Helm value changes to same repo"
+          withCredentials([usernamePassword(credentialsId: 'githubtoken', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
             sh """
               git config user.name "Jenkins CI"
               git config user.email "jenkins@example.com"
