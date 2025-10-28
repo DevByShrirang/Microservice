@@ -8,7 +8,7 @@ pipeline {
   }
 
   stages {
-    stage('Build & Push Docker Image') {
+    stage('Build & Push Docker Images') {
       steps {
         script {
           echo "🚀 Building Docker image for ${SERVICE_NAME}"
