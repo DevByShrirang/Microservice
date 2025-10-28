@@ -1,0 +1,24 @@
+name: shippingservice
+image:
+  repository: adijaiswal/shippingservice
+  tag: latest
+containerPort: 50051
+env:
+  - name: PORT
+    value: "50051"
+  - name: DISABLE_PROFILER
+    value: "1"
+readinessProbe:
+  periodSeconds: 5
+  exec:
+    command: ["/bin/grpc_health_probe", "-addr=:50051"]
+livenessProbe:
+  periodSeconds: 5
+  exec:
+    command: ["/bin/grpc_health_probe", "-addr=:50051"]
+services:
+  - name: shippingservice
+    type: ClusterIP
+    portName: grpc
+    port: 50051
+    targetPort: 50051

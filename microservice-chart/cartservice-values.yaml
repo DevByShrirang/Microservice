@@ -1,0 +1,30 @@
+name: cartservice
+image:
+  repository: adijaiswal/cartservice
+  tag: latest
+containerPort: 7070
+env:
+  - name: REDIS_ADDR
+    value: "redis-cart:6379"
+readinessProbe:
+  initialDelaySeconds: 15
+  exec:
+    command: ["/bin/grpc_health_probe", "-addr=:7070", "-rpc-timeout=5s"]
+livenessProbe:
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  exec:
+    command: ["/bin/grpc_health_probe", "-addr=:7070", "-rpc-timeout=5s"]
+resources:
+  requests:
+    cpu: 200m
+    memory: 64Mi
+  limits:
+    cpu: 300m
+    memory: 128Mi
+services:
+  - name: cartservice
+    type: ClusterIP
+    portName: grpc
+    port: 7070
+    targetPort: 7070
