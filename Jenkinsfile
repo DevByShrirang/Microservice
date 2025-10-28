@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     stages {
-        stage('Build & Tag Docker Images') {
+        stage('Build & Tag Docker Images to') {
             steps {
                 script {
                     withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
