@@ -3,19 +3,21 @@ pipeline {
 
   environment {
     DOCKERHUB_USER = 'shrirang451'
-    SERVICE_NAME = 'adservice'          // 👈 change this per branch
-    CHART_PATH = './microservice-chart' // ✅ matches your repo
+    SERVICE_NAME = 'adservice'   // 👈 change per branch
+    CHART_PATH = './microservice-chart'
   }
 
   stages {
-    stage('Build & Push Docker Images') {
+    stage('Build & Push Docker Image') {
       steps {
         script {
-          echo "🚀 Building Docker image for ${SERVICE_NAME}"
-          sh """
-            docker build -t ${DOCKERHUB_USER}/${SERVICE_NAME}:${BUILD_NUMBER} .
-            docker push ${DOCKERHUB_USER}/${SERVICE_NAME}:${BUILD_NUMBER}
-          """
+          withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
+            echo "🚀 Building and pushing image for ${SERVICE_NAME}"
+            sh """
+              docker build -t ${DOCKERHUB_USER}/${SERVICE_NAME}:${BUILD_NUMBER} .
+              docker push ${DOCKERHUB_USER}/${SERVICE_NAME}:${BUILD_NUMBER}
+            """
+          }
         }
       }
     }
@@ -23,7 +25,7 @@ pipeline {
     stage('Deploy using Helm') {
       steps {
         script {
-          echo "📦 Deploying ${SERVICE_NAME} via Helm..."
+          echo "📦 Deploying ${SERVICE_NAME} via Helm"
           sh """
             helm upgrade --install ${SERVICE_NAME} ${CHART_PATH} \
               -f ${CHART_PATH}/${SERVICE_NAME}-values.yaml \
@@ -36,10 +38,7 @@ pipeline {
 
     stage('Verify Deployment') {
       steps {
-        script {
-          echo "🔍 Verifying deployment for ${SERVICE_NAME}"
-          sh "kubectl get pods -l app=${SERVICE_NAME} -n default"
-        }
+        sh "kubectl get pods -l app=${SERVICE_NAME} -n default"
       }
     }
   }
