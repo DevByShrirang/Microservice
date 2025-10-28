@@ -8,11 +8,7 @@ pipeline {
     GIT_BRANCH     = 'adservice'    // current branch name (auto per multibranch)
   }
 
-  options {
-    timestamps()
-    ansiColor('xterm')
-  }
-
+  
   stages {
 
     stage('Checkout Code') {
