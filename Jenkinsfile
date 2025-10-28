@@ -3,8 +3,10 @@ pipeline {
 
   environment {
     DOCKERHUB_USER = 'shrirang451'
-    SERVICE_NAME = 'adservice'   // 👈 change per branch
-    CHART_PATH = './microservice-chart'
+    SERVICE_NAME   = 'adservice'           // 👈 change per branch
+    CHART_PATH     = './microservice-chart'
+    GIT_CREDENTIAL = 'githubtoken'         // 👈 Jenkins GitHub credentials ID
+    GIT_BRANCH     = 'main'                // 👈 where your Helm chart lives
   }
 
   stages {
@@ -22,30 +24,37 @@ pipeline {
       }
     }
 
-    stage('Deploy using Helm') {
+    stage('Update Helm Values for GitOps') {
       steps {
         script {
-          echo "📦 Deploying ${SERVICE_NAME} via Helm"
+          echo "📝 Updating image tag in ${SERVICE_NAME}-values.yaml"
           sh """
-            helm upgrade --install ${SERVICE_NAME} ${CHART_PATH} \
-              -f ${CHART_PATH}/${SERVICE_NAME}-values.yaml \
-              --set image.repository=${DOCKERHUB_USER}/${SERVICE_NAME} \
-              --set image.tag=${BUILD_NUMBER}
+            sed -i 's|tag:.*|tag: "${BUILD_NUMBER}"|' ${CHART_PATH}/${SERVICE_NAME}-values.yaml
           """
         }
       }
     }
 
-    stage('Verify Deployment') {
+    stage('Commit & Push Updated Helm Chart') {
       steps {
-        sh "kubectl get pods -l app=${SERVICE_NAME} -n default"
+        script {
+          withCredentials([usernamePassword(credentialsId: "${GIT_CREDENTIAL}", usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+            sh """
+              git config user.name "Jenkins CI"
+              git config user.email "jenkins@example.com"
+              git add ${CHART_PATH}/${SERVICE_NAME}-values.yaml
+              git commit -m "🤖 Update ${SERVICE_NAME} image tag to ${BUILD_NUMBER}"
+              git push https://${GIT_USER}:${GIT_PASS}@github.com/DevByShrirang/Microservice.git HEAD:${GIT_BRANCH}
+            """
+          }
+        }
       }
     }
   }
 
   post {
     always {
-      echo "🧹 Cleaning up local Docker cache"
+      echo "🧹 Cleaning up Docker images"
       sh "docker image prune -f || true"
     }
   }
